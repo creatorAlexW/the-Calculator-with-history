@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>calculator</title>
+    <style>
+        body {
+            background-color: #111;
+            font-family: sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            color: white;
+            overflow: hidden;
+        }
+
+        #display {
+            background: transparent;
+            position: fixed;
+            bottom: 570px;
+            right: 10px;
+            width: 100%;
+            color: #ffffff;
+            font-size: 72px;
+            font-weight: 300;
+            text-align: right;
+            border: none;
+            outline: none;
+            caret-color: transparent;
+            caret-color: #fff;
+            overflow: hidden;
+            /* text-overflow: ellipsis; */
+        }
+
+        #out {
+            position: fixed;
+            top: 0;
+            font-size: 30px;
+            color: #ffffff;
+            left: 10px;
+            height: 300px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 95%;
+            position: fixed;
+            bottom: 8px;
+            left: 3%;
+        }
+
+        .theButton {
+            border-radius: 50%;
+            color: #ffffff;
+            background-color: #333333;
+            font-size: 35px;
+            height: 80px;
+            width: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: none;
+        }
+
+        .Button:active {
+            background-color: #666;
+        }
+
+        .operator {
+            background-color: #ff9500;
+            color: #ffffff;
+        }
+
+        .operator:active {
+            background-color: #ffb143;
+        }
+
+        .function {
+            background-color: #909090;
+            color: #ffffff;
+        }
+
+        .function:active {
+            background-color: #bababa;
+        }
+
+        .equals {
+            background-color: #ff9500;
+            color: #ffffff;
+        }
+
+        .equals:active {
+            background-color: #ffb143;
+        }
+    </style>
+    <!-- 添加 jQuery 引用 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div id="out"></div>
+    <input type="text" id="display" readonly>
+    <!-- <input type="text" id="display"> -->
+    <div class="button-grid">
+        <!-- 第一行 -->
+        <button class="theButton" data-value="(">(</button>
+        <button class="theButton" data-value=")">)</button>
+        <button class="theButton" data-value="3.14159">π</button>
+        <button class="theButton" id="square" data-value="">^2</button>
+
+        <!-- 第二行 -->
+        <button class="theButton function" id="clear">AC</button>
+        <button class="theButton function" id="delete">&#9003;</button>
+        <button class="theButton function" id="percentage" data-value="">%</button>
+        <button class="theButton operator" data-value="/">÷</button>
+
+        <!-- 第三行 -->
+        <button class="theButton" data-value="7">7</button>
+        <button class="theButton" data-value="8">8</button>
+        <button class="theButton" data-value="9">9</button>
+        <button class="theButton operator" data-value="*">&times;</button>
+
+        <!-- 第四行 -->
+        <button class="theButton" data-value="4">4</button>
+        <button class="theButton" data-value="5">5</button>
+        <button class="theButton" data-value="6">6</button>
+        <button class="theButton operator" data-value="-">-</button>
+
+        <!-- 第五行 -->
+        <button class="theButton" data-value="1">1</button>
+        <button class="theButton" data-value="2">2</button>
+        <button class="theButton" data-value="3">3</button>
+        <button class="theButton operator" data-value="+">+</button>
+
+        <!-- 第六行 -->
+        <button class="theButton" data-value=".">.</button>
+        <button class="theButton" data-value="0">0</button>
+        <button id="clearHistory" class="theButton">&#128465;</button>
+        <button class="theButton equals" id="equals">=</button>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const $display = $('#display');
+            const $historyElement = $('#out');
+            let currentInput = '';
+            let shouldResetDisplay = false;
+            let calculationHistory = JSON.parse(localStorage.getItem('calculatorHistory')) || [];
+            let errorTest = ['!', '@', '#', '$', '%', '*', '^', '(', ')', '-', '+', '?', '/']
+
+            // 更新历史记录显示
+            function updateHistoryDisplay() {
+                $historyElement.empty();
+
+                // 显示最新的记录
+                calculationHistory.slice(-5).reverse().forEach(item => {
+                    const historyItem = $('<div>').addClass('history-item').text(`${item.expression} = ${item.result}`);
+
+                    // 为历史记录项添加点击事件
+                    historyItem.on('click', function () {
+                        // 将历史记录的表达式放入输入框
+                        currentInput = item.expression;
+                        $display.val(currentInput);
+                        shouldResetDisplay = false;
+                    });
+
+                    $historyElement.append(historyItem);
+                });
+            }
+
+
+            // 添加历史记录
+            function addToHistory(expression, result) {
+                calculationHistory.push({
+                    expression: expression,
+                    result: result,
+                    timestamp: new Date().toISOString()
+                });
+
+                // 限制历史记录数量为20条
+                if (calculationHistory.length > 10) {
+                    calculationHistory = calculationHistory.slice(-10);
+                }
+
+                // 保存到本地存储
+                localStorage.setItem('calculatorHistory', JSON.stringify(calculationHistory));
+
+                // 更新历史记录显示
+                updateHistoryDisplay();
+            }
+
+            // 清空历史记录
+            function clearHistory() {
+                calculationHistory = [];
+                localStorage.removeItem('calculatorHistory');
+                updateHistoryDisplay();
+            }
+
+            $('.theButton:not(#clear, #equals, #clearHistory, #delete)').on('click', function () {
+                // 获取按钮的data-value值
+                const value = $(this).data('value');
+
+                // 如果需要重置显示屏，则清空当前输入
+                if (shouldResetDisplay) {
+                    currentInput = '';
+                    shouldResetDisplay = false;
+                }
+
+                // 处理小数点输入，防止重复
+                if (value === '.' && currentInput.includes('.')) {
+                    // 获取当前输入的最后一部分数字
+                    const lastNumber = currentInput.split(/[\+\-\*\/]/).pop();
+                    // 如果最后一部分数字已包含小数点，则忽略此次输入
+                    if (lastNumber.includes('.')) {
+                        return;
+                    }
+                }
+
+                // 将按钮值追加到当前输入
+                currentInput += value;
+                // 更新显示屏
+                $display.val(currentInput);
+            });
+
+            // 清除按钮点击事件
+            $('#clear').on('click', function () {
+                // 清空当前输入和显示屏
+                currentInput = '';
+                $display.val('');
+            });
+
+            // 删除按钮点击事件 - 删除输入框最前面的字符
+            $('#delete').on('click', function () {
+                if (currentInput.length > 0) {
+                    // 删除最后面的字符（光标前面的字符）
+                    currentInput = currentInput.slice(0, -1);
+                    $display.val(currentInput);
+                }
+            });
+
+            // 清空历史记录按钮
+            $('#clearHistory').on('click', clearHistory);
+
+            // // 等号按钮点击事件 - 计算结果
+            // $('#equals').on('click', function () {
+            //     if (!currentInput) {
+            //         return;
+            //     }
+            //     try {
+            //         // 调用计算函数
+            //         const result = calculate(currentInput);
+            //         // 显示计算结果
+            //         $display.val(result);
+            //         // 添加到历史记录
+            //         addToHistory(currentInput, result);
+
+            //         // 将结果存储为当前输入
+            //         currentInput = result.toString();
+            //         // 设置重置标志
+            //         shouldResetDisplay = true;
+            //     } catch (error) {
+            //         // 显示错误信息
+            //         $display.val('false');
+            //         // 1秒后清空显示屏
+            //         setTimeout(function () {
+            //             currentInput = 'false';
+            //             $display.val('false');
+            //         }, 500);
+            //     }
+            // });
+            //
+            // 等号按钮点击事件 - 计算结果
+            $('#equals').on('click', function () {
+                if (!currentInput) {
+                    return;
+                }
+                try {
+                    // 直接计算并格式化结果
+                    const result = new Function('return ' + currentInput)();
+
+                    // 检查计算结果是否有效
+                    if (!isFinite(result)) {
+                        throw new Error('无效结果');
+                    }
+
+                    // 格式化显示结果，限制小数位数为5位
+                    const formattedResult = parseFloat(result.toFixed(5));
+                    $display.val(formattedResult);
+
+                    // 添加到历史记录
+                    addToHistory(currentInput, formattedResult);
+
+                    // 将结果存储为当前输入
+                    currentInput = formattedResult.toString();
+                    // 设置重置标志
+                    shouldResetDisplay = true;
+                } catch (error) {
+                    // 显示错误信息
+                    $display.val('错误');
+                    // 1秒后清空显示屏
+                    setTimeout(function () {
+                        currentInput = '';
+                        $display.val('');
+                    }, 1000);
+                }
+            });
+            // 百分比按钮点击事件
+            $('#percentage').on('click', function () {
+                if (currentInput !== '') {
+                    try {
+                        // 计算当前表达式的值
+                        let result = calculate(currentInput);
+                        // 转换为百分比
+                        result = result / 100;
+                        // 更新显示和当前输入
+                        currentInput = result.toString();
+                        $display.val(currentInput);
+                        shouldResetDisplay = true;
+                    } catch (error) {
+                        // 如果计算失败，只处理当前数字
+                        if (currentInput !== '') {
+                            // 尝试解析最后一个数字并转换为百分比
+                            const parts = currentInput.split(/[\+\-\*\/]/);
+                            if (parts.length > 0) {
+                                const lastPart = parts[parts.length - 1];
+                                const lastNumber = parseFloat(lastPart);
+                                if (!isNaN(lastNumber)) {
+                                    const percentageValue = lastNumber / 100;
+                                    // 找到最后一个数字的起始位置
+                                    const lastOperatorIndex = Math.max(
+                                        currentInput.lastIndexOf('+'),
+                                        currentInput.lastIndexOf('-'),
+                                        currentInput.lastIndexOf('*'),
+                                        currentInput.lastIndexOf('/')
+                                    );
+
+                                    let startIndex = 0;
+                                    if (lastOperatorIndex !== -1) {
+                                        startIndex = lastOperatorIndex + 1;
+                                    }
+
+                                    // 替换最后一个数字为百分比值
+                                    currentInput = currentInput.substring(0, startIndex) + percentageValue.toString();
+                                    $display.val(currentInput);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            //
+            $('#square').on('click', function () {
+                if (currentInput !== '') {
+                    // const squared = currentInput
+                    // currentInput = squared * squared;
+                    // $display.val(currentInput);
+                    //
+                    // 计算当前值
+                    const value = new Function('return ' + currentInput)();
+                    // 计算平方
+                    const squared = value * value;
+                    // 格式化显示
+                    const formattedResult = parseFloat(squared.toFixed(5));
+                    $display.val(formattedResult);
+                    currentInput = formattedResult.toString();
+                    shouldResetDisplay = true;
+                }
+            })
+            //
+            function calculate(expression) {
+                // 验证表达式只包含允许的字符
+                // if (!/^[0-9+\-*\/. ]+$/.test(expression)) {
+                //     throw new Error('无效输入');
+                // }
+
+                // 使用Function构造函数进行安全计算
+                const result = new Function('return ' + expression)();
+
+                // 检查计算结果是否有效
+                if (!isFinite(result)) {
+                    throw new Error('error');
+                }
+
+                // 返回结果，限制小数位数为8位
+                return parseFloat(result.toFixed(5));
+            }
+
+            // 初始化历史记录显示
+            updateHistoryDisplay();
+
+        });
+        //
+        document.querySelectorAll('.theButton').forEach(button => {
+            button.addEventListener('click', async function () {
+                if (window.Capacitor && window.Capacitor.Plugins.Haptics) {
+                    try {
+                        await window.Capacitor.Plugins.Haptics.impact({
+                            style: 'ImpactStyle.Medium'
+                        });
+                    } catch (e) {
+                        console.log('error');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
