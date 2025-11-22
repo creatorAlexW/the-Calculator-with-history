@@ -66,7 +66,7 @@
             border: none;
         }
 
-        .Button:active {
+        .theButton:active {
             background-color: #666;
         }
 
@@ -98,7 +98,7 @@
         }
     </style>
     <!-- 添加 jQuery 引用 -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="code_jQuery.js"></script>
 </head>
 
 <body>
@@ -109,8 +109,8 @@
         <!-- 第一行 -->
         <button class="theButton" data-value="(">(</button>
         <button class="theButton" data-value=")">)</button>
-        <button class="theButton" data-value="3.14159">π</button>
         <button class="theButton" id="square" data-value="">^2</button>
+        <button class="theButton" id="cube" data-value="">^3</button>
 
         <!-- 第二行 -->
         <button class="theButton function" id="clear">AC</button>
@@ -139,7 +139,7 @@
         <!-- 第六行 -->
         <button class="theButton" data-value=".">.</button>
         <button class="theButton" data-value="0">0</button>
-        <button id="clearHistory" class="theButton">&#128465;</button>
+        <button id="clearHistory" class="theButton">&#10008;</button>
         <button class="theButton equals" id="equals">=</button>
     </div>
 
@@ -355,19 +355,27 @@
             //
             $('#square').on('click', function () {
                 if (currentInput !== '') {
-                    // const squared = currentInput
-                    // currentInput = squared * squared;
-                    // $display.val(currentInput);
+                    const squared = currentInput
+                    currentInput = squared * squared;
+                    $display.val(currentInput);
                     //
                     // 计算当前值
-                    const value = new Function('return ' + currentInput)();
+                    // const value = new Function('return ' + currentInput)();
                     // 计算平方
-                    const squared = value * value;
+                    // const squared = value * value;
                     // 格式化显示
-                    const formattedResult = parseFloat(squared.toFixed(5));
-                    $display.val(formattedResult);
-                    currentInput = formattedResult.toString();
-                    shouldResetDisplay = true;
+                    // const formattedResult = parseFloat(squared.toFixed(5));
+                    // $display.val(formattedResult);
+                    // currentInput = formattedResult.toString();
+                    // shouldResetDisplay = true;
+                }
+            })
+            //
+            $('#cube').on('click', function () {
+                if (currentInput !== '') {
+                    const cubed = currentInput
+                    currentInput = cubed * cubed * cubed;
+                    $display.val(currentInput);
                 }
             })
             //
