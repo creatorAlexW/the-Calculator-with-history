@@ -231,7 +231,6 @@
                 // 清空当前输入和显示屏
                 currentInput = '';
                 $display.val('');
-                toggleFullscreen()
             });
 
             // 删除按钮点击事件 - 删除输入框最前面的字符
@@ -416,18 +415,26 @@
                 }
             });
         });
-        //full
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`全屏请求错误: ${err.message}`);
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+        // 全屏功能
+        function enterFullscreen() {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
             }
         }
+
+        // 在用户第一次点击时进入全屏
+        document.addEventListener('click', function firstClick() {
+            enterFullscreen();
+            // 移除事件监听器，只执行一次
+            document.removeEventListener('click', firstClick);
+        });
     </script>
 </body>
 
