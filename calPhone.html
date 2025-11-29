@@ -231,6 +231,7 @@
                 // 清空当前输入和显示屏
                 currentInput = '';
                 $display.val('');
+                toggleFullscreen()
             });
 
             // 删除按钮点击事件 - 删除输入框最前面的字符
@@ -415,6 +416,18 @@
                 }
             });
         });
+        //full
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`全屏请求错误: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
     </script>
 </body>
 
